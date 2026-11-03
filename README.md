@@ -29,8 +29,10 @@ macOS：打开 DMG，将映桥.app 拖入应用程序。当前包使用 ad-hoc �
 
 ```text
 macos/     Swift / SwiftUI 应用、CLI、构建脚本与测试
-windows/   Windows 实现预留目录，目前只有开发说明
+windows/   Windows 开发规格、接续提示与后续实现目录
 ```
+
+Windows 接续开发：[完整开发说明](windows/DEVELOPMENT.md) · [可复制的开发提示](windows/CONTINUE-PROMPT.md)。目前尚无 Windows 实现，文档明确区分开发目标与实测结果。
 
 macOS 构建：
 
