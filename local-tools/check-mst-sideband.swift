@@ -1,0 +1,35 @@
+import Foundation
+@main struct MSTChecks {
+ static func main() {
+  let link: [UInt8] = [0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x04,0x90,0xc0,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x33,0x40,0x14,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x11]
+  assert(MSTSideband.outputPorts(link)==[3])
+  assert(MSTSideband.outputPorts(Array(link.dropLast()))==nil)
+  assert(MSTSideband.request([1],sequence:0)==[0x10,2,0xcb,1,0xd5])
+  assert(MSTSideband.request([1],sequence:1)==[0x10,2,0xd8,1,0xd5])
+  assert(MSTSideband.request([],sequence:0)==nil)
+  let frame: [UInt8]=[0x10,0x0f,0xc7,0x22,3,11,0x6e,0x88,2,0,0x10,0,0,0x64,0,0x19,0xd9,0x9d]
+  let decoded=MSTSideband.reply(frame,sequence:0)!
+  assert(decoded.start && decoded.end)
+  assert(MSTSideband.brightness(decoded.body,port:3)?.current==25)
+  assert(MSTSideband.brightness(decoded.body,port:3)?.max==100)
+  assert(MSTSideband.brightness(decoded.body,port:2)==nil)
+  assert(MSTSideband.reply(frame,sequence:1)==nil)
+  for i in frame.indices {
+   var broken=frame;broken[i]^=1
+   assert(MSTSideband.reply(broken,sequence:0)==nil)
+  }
+  let edid: [UInt8]=[0x22,3,16,0,255,255,255,255,255,255,0,0x4c,0x23,0x63,0x25,0,0,0,0]
+  assert(MSTSideband.matchesEDID(edid,port:3,vendor:19491,product:9571,serial:0))
+  assert(!MSTSideband.matchesEDID(edid,port:3,vendor:19491,product:10083,serial:0))
+  assert(!MSTSideband.matchesEDID(edid,port:2,vendor:19491,product:9571,serial:0))
+  assert(!MSTSideband.matchesEDID(edid,port:3,vendor:19491,product:9571,serial:1))
+  assert(!MSTSideband.matchesEDID(Array(edid.dropLast()),port:3,vendor:19491,product:9571,serial:0))
+  let input: [UInt8] = [0x22,3,11,0x6e,0x88,2,0,0x60,0,0,0,0,0x0f,0xdb]
+  assert(MSTSideband.vcp(input,port:3,command:0x60)?.current==15)
+  assert(MSTSideband.vcp(input,port:2,command:0x60)==nil)
+  assert(MSTSideband.brightness(input,port:3)==nil)
+  assert(MSTSideband.inputPacket(0)==nil)
+  assert(MSTSideband.inputPacket(0x1234)==[0x51,0x84,3,0x60,0x12,0x34,0xfe])
+  print("PASS: captured MST CRCs, sequence and corruption rejection, topology/EDID identity, validated DDC brightness")
+ }
+}

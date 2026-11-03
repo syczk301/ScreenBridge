@@ -1,0 +1,6 @@
+Source: https://github.com/didriksg/Crisp
+Branch: main
+Upstream version: 1.7.1 (5)
+Retrieved: 2026-10-31 Asia/Shanghai
+Archive SHA256: 67a4842228d151302a51802fb1c492885c3437c119c522982a378e445972ed4c
+License: MIT

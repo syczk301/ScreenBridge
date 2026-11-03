@@ -1,0 +1,10 @@
+build/
+.DS_Store
+*.dmg
+*.zip
+*.app/
+__pycache__/
+*.log
+.env
+.env.*
+xcuserdata/
