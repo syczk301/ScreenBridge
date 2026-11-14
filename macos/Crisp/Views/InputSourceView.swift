@@ -27,16 +27,21 @@ struct InputBodyBlock: View {
     var body: some View {
         if service.isAvailable(for: display) {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(1...2, id: \.self) { index in
-                    if let value = service.resolve("dp\(index)", for: display) {
-                        CheckmarkRow(
-                            label: "DP\(index)",
-                            isSelected: false, isPending: pending == value
-                        ) { choose(value) }
-                        .disabled(service.switching.contains(display.displayUUID))
-                        .help(String(format: "VCP 0x60 · %d (0x%04X)", Int(value), Int(value)))
-                    }
+                if let route = service.routes[display.displayUUID] {
+                    Text("本机：\(route.home.name) · 目标：\(route.target.name)").inputCaption()
+                    CheckmarkRow(label: "切到目标 · \(route.target.name)",
+                                 isSelected: false, isPending: pending == route.target.value) {
+                        choose(route.target.value)
+                    }.disabled(service.switching.contains(display.displayUUID))
+                    CheckmarkRow(label: "返回本机 · \(route.home.name)",
+                                 isSelected: false, isPending: pending == route.home.value) {
+                        choose(route.home.value)
+                    }.disabled(service.switching.contains(display.displayUUID))
+                } else {
+                    Text("请按实际接线设置本机接口和切换目标。").inputCaption()
                 }
+                Button("接线设置…") { InputRouteWindow.shared.show(for: display) }
+                    .buttonStyle(.link).padding(.leading, 24).padding(.vertical, 6)
                 Text("Selecting an input sends its command immediately. The display stays connected to macOS.")
                     .inputCaption()
                 Button("Customize Input Sources…") {

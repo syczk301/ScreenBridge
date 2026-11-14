@@ -56,3 +56,28 @@ enum DirectInputCommand {
         return await writer(value)
     }
 }
+
+/// Explicit cabling roles. Values are final Set VCP commands, never Get VCP values.
+struct DisplayInputRoute: Codable, Equatable {
+    let home: CustomInputSource
+    let target: CustomInputSource
+
+    enum Destination { case home, target }
+    func input(for destination: Destination) -> CustomInputSource {
+        destination == .home ? home : target
+    }
+    var isValid: Bool {
+        home.value > 0 && target.value > 0 && home.value != target.value
+            && !home.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !target.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && home.name.count <= 64 && target.name.count <= 64
+            && home.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                .caseInsensitiveCompare(target.name.trimmingCharacters(in: .whitespacesAndNewlines)) != .orderedSame
+    }
+    static func validated(home: InputSourceDraft, target: InputSourceDraft) throws -> Self {
+        let inputs = try InputSourceConfiguration.validate([home, target])
+        let route = Self(home: inputs[0], target: inputs[1])
+        guard route.isValid else { throw InputSourceConfiguration.ValidationError.duplicate }
+        return route
+    }
+}

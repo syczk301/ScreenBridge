@@ -6,6 +6,9 @@ struct InputServiceChecks {
         let key = "screenbridge.CustomInputSources.v1"
         let persisted = ["test-monitor-123": [CustomInputSource(name: "Saved PC", value: 17)]]
         UserDefaults.standard.set(try JSONEncoder().encode(persisted), forKey: key)
+        let savedRoute = DisplayInputRoute(home: CustomInputSource(name: "USB-C", value: 27),
+                                          target: CustomInputSource(name: "HDMI1", value: 17))
+        UserDefaults.standard.set(try JSONEncoder().encode(["test-monitor-700": savedRoute]), forKey: "screenbridge.DisplayInputRoutes.v1")
         let service = InputSwitchService.shared
         let ddc = DDCService.shared
         let display = DisplayInfo(id: 123)
@@ -52,34 +55,56 @@ struct InputServiceChecks {
         try service.saveCustom([InputSourceDraft(name:"DP1",number:"42")],for:g73.displayUUID)
         assert(service.options(for:g73)==[42] && service.resolve("DP1",for:g73)==42)
         service.resetCustom(for: g73.displayUUID)
+        assert(service.routes["test-monitor-700"] == savedRoute)
         ddc.accept = true
         ddc.writes = []
-        await service.switchBothToDP1([g73,g4q])
+        let ju27 = DisplayInfo(id: 270, vendor: 21063, model: 10000)
+        let ju24 = DisplayInfo(id: 240, vendor: 21063, model: 9237)
+        // Saving cabling never writes; no inference from current input or DP defaults.
+        try service.saveRoute(home: InputSourceDraft(name: "DP2", number: "15"),
+                              target: InputSourceDraft(name: "DP1", number: "18"), for: ju24.displayUUID)
+        try service.saveRoute(home: InputSourceDraft(name: "HDMI1", number: "0x11"),
+                              target: InputSourceDraft(name: "USB-C", number: "27"), for: ju27.displayUUID)
+        assert(ddc.writes.isEmpty && ddc.reads == 0)
+        let routeData = UserDefaults.standard.data(forKey: "screenbridge.DisplayInputRoutes.v1")!
+        let storedRoutes = try JSONDecoder().decode([String: DisplayInputRoute].self, from: routeData)
+        assert(storedRoutes[ju24.displayUUID]?.home.value == 15)
+        for drafts in [("DP1", "0", "DP2", "18"), ("DP1", "18", "DP2", "18"), ("DP1", "15", "dp1", "18")] {
+            do {
+                try service.saveRoute(home: InputSourceDraft(name: drafts.0, number: drafts.1),
+                                      target: InputSourceDraft(name: drafts.2, number: drafts.3), for: ju24.displayUUID)
+                fatalError("Invalid cabling saved")
+            } catch { }
+        }
+        assert(service.routes[ju24.displayUUID]?.home.value == 15)
+        await service.switchConfigured([ju24, ju27, ju24, g73, DisplayInfo(id: 1, builtin: true), DisplayInfo(id: 999)], to: .target)
         assert(ddc.writes.count == 2)
-        assert(ddc.writes.contains { $0.0 == 73 && $0.1 == 7 })
-        assert(ddc.writes.contains { $0.0 == 74 && $0.1 == 15 })
-        assert(!service.batchSwitching && ddc.reads == 0)
+        assert(ddc.writes.contains { $0.0 == 240 && $0.1 == 18 })
+        assert(ddc.writes.contains { $0.0 == 270 && $0.1 == 27 })
+        assert(service.batchMessage?.contains("已跳过") == true && !service.batchSwitching)
         ddc.writes = []
-        await service.switchBothToDP1([g73])
-        assert(ddc.writes.count == 1 && ddc.writes[0].1 == 7)
+        await service.switchConfigured([ju24, ju27], to: .home)
+        assert(ddc.writes.count == 2)
+        assert(ddc.writes.contains { $0.0 == 240 && $0.1 == 15 })
+        assert(ddc.writes.contains { $0.0 == 270 && $0.1 == 17 })
         ddc.writes = []
         ddc.accept = false
-        await service.switchBothToDP1([g73,g4q])
+        await service.switchConfigured([ju24, ju27], to: .target)
         assert(ddc.writes.count == 2 && service.batchMessage?.contains("发送失败") == true)
         ddc.accept = true
         ddc.writes = []
-        let new27 = DisplayInfo(id: 27, vendor: 1234, model: 27)
-        let new24 = DisplayInfo(id: 24, vendor: 1234, model: 24)
-        await service.switchBothToDP1([new27, new24, new27, DisplayInfo(id: 1, builtin: true), DisplayInfo(id: 999)])
-        assert(ddc.writes.count == 2 && ddc.writes.allSatisfy { $0.1 == 15 })
-        assert(service.batchMessage?.contains("Monitor 27") == true)
-        assert(service.batchMessage?.contains("G73") == false)
+        service.resetRoute(for: ju24.displayUUID)
+        guard case .failure(.notConfigured) = await service.switchRoute(ju24, to: .home) else {
+            fatalError("Missing route must not guess DP2")
+        }
+        await service.switchConfigured([ju24], to: .target)
+        assert(ddc.writes.isEmpty)
+        _ = await service.switchRoute(ju27, to: .home)
+        _ = await service.switchRoute(ju27, to: .home)
+        assert(ddc.writes.count == 2 && ddc.writes.allSatisfy { $0.1 == 17 })
         ddc.writes = []
-        await service.switchBothToDP1([])
-        assert(ddc.writes.isEmpty && !service.batchSwitching)
-        assert(ddc.reads == 0)
-        let ju24 = DisplayInfo(id: 240, vendor: 21063, model: 9237)
-        let ju27 = DisplayInfo(id: 270, vendor: 21063, model: 10000)
+        await service.switchConfigured([], to: .home)
+        assert(ddc.writes.isEmpty && ddc.reads == 0 && !service.batchSwitching)
         assert(service.resolve("dp1", for: ju24) == 18)
         assert(service.resolve("DisplayPort 2", for: ju24) == 15)
         assert(service.resolve("15", for: ju24) == 15)
@@ -92,10 +117,6 @@ struct InputServiceChecks {
         // Readback/capabilities retain standard semantics despite write remapping.
         assert(service.label(for: 15, display: ju24) == "DisplayPort 1")
         assert(service.label(for: 16, display: ju24) == "DisplayPort 2")
-        await service.switchBothToDP1([ju24, ju27])
-        assert(ddc.writes.count == 2)
-        assert(ddc.writes.contains { $0.0 == 240 && $0.1 == 18 })
-        assert(ddc.writes.contains { $0.0 == 270 && $0.1 == 18 })
         try service.saveCustom([InputSourceDraft(name: "DP1", number: "42")], for: ju24.displayUUID)
         assert(service.resolve("dp1", for: ju24) == 42)
         service.resetCustom(for: ju24.displayUUID)

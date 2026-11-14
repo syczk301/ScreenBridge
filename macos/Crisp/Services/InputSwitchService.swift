@@ -19,18 +19,19 @@ final class InputSwitchService: ObservableObject {
     /// Only live readback, never a guessed current input or a persisted mark.
     @Published private(set) var macInput: [String: UInt16] = [:]
     @Published private(set) var customInputs: [String: [CustomInputSource]]
+    @Published private(set) var routes: [String: DisplayInputRoute]
     @Published private(set) var switching: Set<String> = []
     @Published private(set) var batchSwitching = false
     @Published private(set) var batchMessage: String?
 
-    func dp1Targets(in displays: [DisplayInfo]) -> [DisplayInfo] {
+    func physicalTargets(in displays: [DisplayInfo]) -> [DisplayInfo] {
         var seen = Set<String>()
         return displays.filter { isAvailable(for: $0) && seen.insert($0.displayUUID).inserted }
     }
 
     /// Snapshot targets and launch every write before awaiting any result.
-    func switchBothToDP1(_ displays: [DisplayInfo]) async {
-        let targets = dp1Targets(in: displays)
+    func switchConfigured(_ displays: [DisplayInfo], to destination: DisplayInputRoute.Destination) async {
+        let targets = physicalTargets(in: displays)
         guard !batchSwitching, !targets.isEmpty,
               targets.allSatisfy({ !switching.contains($0.displayUUID) }) else { return }
         batchSwitching = true
@@ -38,9 +39,9 @@ final class InputSwitchService: ObservableObject {
         defer { batchSwitching = false }
         let tasks = targets.map { display in
             let name = display.name
-            let value = resolve("dp1", for: display)
+            let value = routes[display.displayUUID]?.input(for: destination).value
             return Task { @MainActor in
-                guard let value else { return "\(name)：接口未配置" }
+                guard let value else { return "\(name)：未设置接线，已跳过" }
                 let result = await self.switchInput(display, to: value)
                 switch result {
                 case .success: return "\(name)：命令已发送"
@@ -53,11 +54,39 @@ final class InputSwitchService: ObservableObject {
         batchMessage = messages.joined(separator: " · ")
     }
 
+    func saveRoute(home: InputSourceDraft, target: InputSourceDraft, for uuid: String) throws {
+        let route = try DisplayInputRoute.validated(home: home, target: target)
+        var updated = routes
+        updated[uuid] = route
+        let data = try JSONEncoder().encode(updated)
+        UserDefaults.standard.set(data, forKey: routeKey)
+        routes = updated
+    }
+
+    func resetRoute(for uuid: String) {
+        var updated = routes
+        updated[uuid] = nil
+        guard let data = try? JSONEncoder().encode(updated) else { return }
+        UserDefaults.standard.set(data, forKey: routeKey)
+        routes = updated
+    }
+
+    func switchRoute(_ display: DisplayInfo, to destination: DisplayInputRoute.Destination) async -> Result<Bool, SwitchError> {
+        guard let value = routes[display.displayUUID]?.input(for: destination).value else {
+            return .failure(.notConfigured)
+        }
+        return await switchInput(display, to: value)
+    }
+
+    private let routeKey = "screenbridge.DisplayInputRoutes.v1"
     private let listedKey = "crisp.InputSourcesListed"
     private let customKey = "screenbridge.CustomInputSources.v1"
 
     private init() {
         let defaults = UserDefaults.standard
+        routes = (defaults.data(forKey: routeKey).flatMap {
+            try? JSONDecoder().decode([String: DisplayInputRoute].self, from: $0)
+        } ?? [:]).filter { $0.value.isValid }
         listed = Self.load(defaults.dictionary(forKey: listedKey))
         customInputs = defaults.data(forKey: customKey).flatMap {
             try? JSONDecoder().decode([String: [CustomInputSource]].self, from: $0)
@@ -165,9 +194,10 @@ final class InputSwitchService: ObservableObject {
     // MARK: - Direct commands
 
     enum SwitchError: Error, CustomStringConvertible {
-        case writeFailed, unavailable, busy
+        case writeFailed, unavailable, busy, notConfigured
         var description: String {
             switch self {
+            case .notConfigured: "请先设置此显示器的本机接口和切换目标。"
             case .writeFailed: String(localized: "Input switching failed. Enable DDC/CI in the monitor menu and check that the cable or dock supports DDC.")
             case .unavailable: String(localized: "Input switching is only available for physical external displays.")
             case .busy: String(localized: "An input command is already in progress.")

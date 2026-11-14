@@ -8,7 +8,7 @@
 2. 阅读 [完整开发说明](DEVELOPMENT.md)：功能、技术方案、接口映射、实现顺序、验收与打包要求。
 3. 将 [接续提示](CONTINUE-PROMPT.md) 中的文本复制到开发助手，工作目录设为仓库根目录。
 
-目标：Windows 11 x64，C# + .NET 10 LTS + WPF；硬件亮度、DP1/DP2、自定义映射、一键切屏、托盘与登录启动。禁止软件调暗。
+目标：Windows 11 x64，C# + .NET 10 LTS + WPF；硬件亮度、按实际接线设置本机/目标接口、自定义映射、批量切换与返回、托盘与登录启动。禁止软件调暗。
 
 [macOS 实测记录](../macos/docs/hardware-compatibility.md) 仅作候选配置依据，Windows 需要独立验证。JU27 DP2 仍未验证，不能直接套用 JU24 配置。
 

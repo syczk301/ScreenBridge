@@ -726,7 +726,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         })
         blocks.append(block("update") { UpdateBlockView() })
 
-        blocks.append(block("switch-both-dp1") { SwitchBothDP1Block() })
+        blocks.append(block("switch-configured-inputs") { SwitchConfiguredInputsBlock() })
 
         let footer = block("footer") { PanelFooterBlock() }
         canvas.setBlocks(blocks, footer: footer)
