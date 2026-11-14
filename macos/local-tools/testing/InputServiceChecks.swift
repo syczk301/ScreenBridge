@@ -121,6 +121,17 @@ struct InputServiceChecks {
         assert(service.resolve("dp1", for: ju24) == 42)
         service.resetCustom(for: ju24.displayUUID)
         assert(service.resolve("dp1", for: ju24) == 18)
+        assert(service.homeSuggestion(for: ju24, readback: 15) == CustomInputSource(name: "DP1", value: 18))
+        assert(service.homeSuggestion(for: ju24, readback: 16) == CustomInputSource(name: "DP2", value: 15))
+        assert(service.homeSuggestion(for: ju27, readback: 15)?.value == 18)
+        assert(service.homeSuggestion(for: ju27, readback: 16) == nil)
+        assert(service.homeSuggestion(for: display, readback: 15) == nil)
+        assert(service.homeSuggestion(for: ju24, readback: 18) == nil)
+        assert(service.homeSuggestion(for: g73, readback: 8)?.value == 8)
+        try service.saveCustom([InputSourceDraft(name: "DP1", number: "42")], for: ju24.displayUUID)
+        assert(service.homeSuggestion(for: ju24, readback: 15)?.value == 42)
+        assert(ddc.writes.isEmpty && ddc.reads == 0)
+        service.resetCustom(for: ju24.displayUUID)
         print("PASS: persisted custom lists load/save/reset and stay per-display; saving sends no command; real InputSwitchService sends immediately without readback, resends same destination, never disconnects, reports write failure, excludes internal/virtual displays")
     }
 }

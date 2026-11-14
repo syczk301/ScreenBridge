@@ -54,6 +54,13 @@ final class InputSwitchService: ObservableObject {
         batchMessage = messages.joined(separator: " · ")
     }
 
+    func homeSuggestion(for display: DisplayInfo, readback: UInt16) -> CustomInputSource? {
+        guard let measured = VerifiedInputReadback.input(readback, vendor: display.vendorNumber,
+                                                         model: display.modelNumber) else { return nil }
+        // Explicit named overrides still take precedence over measured default commands.
+        return CustomInputSource(name: measured.name, value: resolve(measured.name, for: display) ?? measured.value)
+    }
+
     func saveRoute(home: InputSourceDraft, target: InputSourceDraft, for uuid: String) throws {
         let route = try DisplayInputRoute.validated(home: home, target: target)
         var updated = routes

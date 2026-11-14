@@ -81,3 +81,19 @@ struct DisplayInputRoute: Codable, Equatable {
         return route
     }
 }
+
+/// Only measured read-to-write pairs can be used for automatic home-port suggestions.
+enum VerifiedInputReadback {
+    static func input(_ read: UInt16, vendor: UInt32, model: UInt32) -> CustomInputSource? {
+        switch (vendor, model, read) {
+        case (21063, 9237, 15), (21063, 10000, 15):
+            return CustomInputSource(name: "DP1", value: 18)
+        case (21063, 9237, 16): return CustomInputSource(name: "DP2", value: 15)
+        case (19491, 10083, 7): return CustomInputSource(name: "DP1", value: 7)
+        case (19491, 10083, 8): return CustomInputSource(name: "DP2", value: 8)
+        case (19491, 9571, 15): return CustomInputSource(name: "DP1", value: 15)
+        case (19491, 9571, 16): return CustomInputSource(name: "DP2", value: 16)
+        default: return nil
+        }
+    }
+}
