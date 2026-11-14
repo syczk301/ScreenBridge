@@ -124,4 +124,24 @@ extern IOReturn IOAVServiceWriteI2C(IOAVServiceRef service,
                                     void *inputBuffer,
                                     uint32_t inputBufferSize);
 
+// Output signal modes, distinct from CG framebuffer pixel encoding.
+// Selectors and type encodings checked on macOS 26; loaded optionally at runtime.
+@interface CADisplayMode : NSObject
+@property(readonly) NSUInteger width;
+@property(readonly) NSUInteger height;
+@property(readonly) NSUInteger bitDepth;
+@property(readonly) double refreshRate;
+@property(readonly) NSString *colorMode;
+@property(readonly) NSString *hdrMode;
+@property(readonly) BOOL isVRR;
+@property(readonly) unsigned long long internalRepresentation;
+@end
+@interface CADisplay : NSObject
+@property(class, readonly) NSArray<CADisplay *> *displays;
+@property(readonly) unsigned int displayId;
+@property(readonly) NSArray<CADisplayMode *> *availableModes;
+@property(strong) CADisplayMode *currentMode;
+- (void)update;
+@end
+
 #endif /* Crisp_Bridging_Header_h */

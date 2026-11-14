@@ -31,3 +31,8 @@ swiftc -swift-version 6 -module-cache-path build/module-cache -parse-as-library 
   Crisp/Models/MSTSideband.swift local-tools/check-mst-sideband.swift \
   -o build/checks/mst-sideband
 build/checks/mst-sideband
+
+swiftc -swift-version 6 -module-cache-path build/module-cache -parse-as-library \
+  Crisp/Models/OutputColorMode.swift local-tools/check-output-color.swift \
+  -o build/checks/output-color
+build/checks/output-color

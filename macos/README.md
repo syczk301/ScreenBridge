@@ -8,7 +8,7 @@
 
 从 [Releases](https://github.com/syczk301/ScreenBridge/releases/latest) 下载 DMG，将 **映桥.app** 拖入 **Applications / 应用程序**。
 
-- 当前版本：**1.2.1**。
+- 当前版本：**1.3.0**。
 - 预编译版本：Apple Silicon（arm64），macOS 14 及以上。
 - 使用 ad-hoc 签名，未经过 Apple Developer ID 签名和公证，系统可能拦截首次启动。确认来源后可按 macOS 提示在“隐私与安全性”中允许打开，或从源码构建。
 - 应用设置中可开启登录后自动启动。
@@ -83,3 +83,11 @@ bash local-tools/check.sh
 ## 来源与许可
 
 MIT License，详见 [LICENSE](LICENSE)、[ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md)、[UPSTREAM.txt](UPSTREAM.txt)。`UPSTREAM-README.md` 是上游历史说明，其中的产品承诺不代表本发行版的验证范围。
+
+## 输出色彩模式
+
+展开每屏的“色彩模式”，可选择当前连接实际支持的位深、RGB/YCbCr、全范围/有限范围和 SDR/HDR 组合。数据来自 CADisplay 的输出模式，不使用 CG 帧缓冲深度、ICC 配置或 DDC 色温预设代替。仅提供与当前物理分辨率、刷新率和 VRR 状态匹配的模式；需要其他刷新率的格式仅提示数量。
+
+点击后以系统读回为准更新选中项，15 秒内选择“保留”，否则请求恢复原模式；关闭菜单也会继续倒计时。切换可能短暂黑屏。此版本不提供跨分辨率的配置锁定。使用运行时检查的 macOS 私有 API，不支持的连接显示不可用，不显示虚构模式。
+
+实测：JU24 在 3840×2160、160 Hz、1920×1080 HiDPI 下从 10-bit RGB 全范围切至 8-bit，再恢复 10-bit；系统读回通过，分辨率与刷新率未变；正式服务的 15 秒自动恢复亦已实测通过。其他格式和 HDR 的画面表现尚未逐项实测。

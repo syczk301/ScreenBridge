@@ -642,6 +642,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             }) {
                 ProfileBodyBlock(controller: profC)
             })
+            blocks.append(detail("output-color-head", isOpen: detailOpen, live: true) {
+                OutputColorHeadBlock(display: display, state: state)
+            })
+            blocks.append(detail("output-color-body", isOpen: {
+                detailOpen() && state.outputColorOpenIDs.contains(id)
+            }) {
+                OutputColorBodyBlock(display: display)
+            })
             blocks.append(detail("dimg-head", isOpen: detailOpen, live: true) {
                 ImageHeadBlock(display: display, state: state)
             })
