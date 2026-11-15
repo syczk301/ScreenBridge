@@ -65,7 +65,7 @@ private struct InputRouteEditor: View {
                 homeEdited = true; confirmedHome = false; homeValue = $0
             }))
             endpoint("切换目标", name: $targetName, value: $targetValue)
-            Text("选择接口可预填型号映射或标准候选值。请核对实际插口及写入数值；JU27 的 DP2 尚未验证。名称和数值均可修改，保存后按此数值直接发送。")
+            Text("接口菜单只预填实测的写入值；未验证的接口留空，需手动验证后填写。当前输入读回值不是切换写入值。自定义条目不代表已验证。")
                 .font(.caption).foregroundStyle(.secondary)
             HStack {
                 Button(reading ? "正在读取…" : "重新读取当前输入") {
@@ -85,6 +85,10 @@ private struct InputRouteEditor: View {
             }
             Text("保存只修改配置，不切屏。重新接线后请更新此设置。返回操作需要显示器仍接受本机接口上的 DDC 命令。")
                 .font(.caption).foregroundStyle(.secondary)
+            if duplicateValues {
+                Text("本机和目标的写入值相同，会发送同一条命令。请核实未验证接口的写入值，不要直接填入当前读回编号。")
+                    .font(.caption).foregroundStyle(.red)
+            }
             if let error { Text(error).font(.caption).foregroundStyle(.red) }
             Spacer(minLength: 0)
             Divider()
@@ -100,7 +104,7 @@ private struct InputRouteEditor: View {
                                               for: display.displayUUID)
                         close()
                     } catch { self.error = "请为本机和目标填写不同的接口名称及有效写入值（1–65535）。" }
-                }.keyboardShortcut(.defaultAction).disabled(reading || (automaticHome && !confirmedHome))
+                }.keyboardShortcut(.defaultAction).disabled(reading || duplicateValues || (automaticHome && !confirmedHome))
             }
         }
         .padding(22).frame(minWidth: 560, minHeight: 600)
@@ -122,7 +126,7 @@ private struct InputRouteEditor: View {
             return
         }
         guard let detected = service.homeSuggestion(for: display, readback: readback) else {
-            readMessage = "当前读回 \(readback)，尚无已验证的写入映射，请手动填写。JU27 DP2 不自动推断。"
+            readMessage = "当前读回 \(readback)，尚无已验证的写入映射；不能将此读回编号直接填作写入值。"
             return
         }
         suggestion = detected
@@ -140,6 +144,12 @@ private struct InputRouteEditor: View {
         confirmedHome = false
     }
 
+    private var duplicateValues: Bool {
+        guard let home = InputSourceConfiguration.parseNumber(homeValue),
+              let target = InputSourceConfiguration.parseNumber(targetValue) else { return false }
+        return home == target
+    }
+
     private func endpoint(_ title: String, name: Binding<String>, value: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.headline)
@@ -148,13 +158,13 @@ private struct InputRouteEditor: View {
                     ForEach(["DP1", "DP2", "HDMI1", "HDMI2", "USB-C"], id: \.self) { label in
                         Button(label) {
                             name.wrappedValue = label
-                            value.wrappedValue = service.resolve(label, for: display).map { String($0) } ?? ""
+                            value.wrappedValue = service.verifiedRouteValue(label, for: display).map { String($0) } ?? ""
                         }
                     }
                     if let custom = service.customInputs[display.displayUUID] {
                         Divider()
                         ForEach(custom) { input in
-                            Button(input.name) {
+                            Button(input.name + "（自定义，需核实）") {
                                 name.wrappedValue = input.name
                                 value.wrappedValue = String(input.value)
                             }
@@ -164,6 +174,14 @@ private struct InputRouteEditor: View {
                 TextField("接口名称", text: name).textFieldStyle(.roundedBorder)
                 TextField("写入值，如 18 / 0x12", text: value)
                     .textFieldStyle(.roundedBorder).frame(width: 175)
+            }
+            if display.vendorNumber == 21063 && display.modelNumber == 10000,
+               DDCInputSource.value(from: name.wrappedValue) == 18 {
+                Text("HDMI2：Windows 当前接法已验证写入 17、读回 18；macOS 尚未验证。读回 18 不可直接当作写入值。")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button("填入 Windows 实测值 17（Mac 待验证）") {
+                    value.wrappedValue = "17"
+                }.font(.caption)
             }
         }
     }

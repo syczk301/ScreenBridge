@@ -135,6 +135,21 @@ final class InputSwitchService: ObservableObject {
         return DDCInputSource.effectiveDP(standard, vendor: display.vendorNumber, model: display.modelNumber)
     }
 
+    /// Cabling presets must never promote a standard/capability value into a verified write.
+    /// Custom entries remain explicit manual choices in the editor, not measured mappings.
+    func verifiedRouteValue(_ name: String, for display: DisplayInfo) -> UInt16? {
+        guard let port = DDCInputSource.value(from: name), port == 15 || port == 16 else { return nil }
+        switch (display.vendorNumber, display.modelNumber, port) {
+        case (21063, 9237, 15), (21063, 10000, 15): return 18
+        case (21063, 9237, 16): return 15
+        case (19491, 10083, 15): return 7
+        case (19491, 10083, 16): return 8
+        case (19491, 9571, 15): return 15
+        case (19491, 9571, 16): return 16
+        default: return nil
+        }
+    }
+
     func saveCustom(_ drafts: [InputSourceDraft], for uuid: String) throws {
         let validated = try InputSourceConfiguration.validate(drafts)
         var updated = customInputs
