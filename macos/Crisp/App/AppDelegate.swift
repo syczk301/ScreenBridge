@@ -609,17 +609,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 b.liveInFlight = live
                 return b
             }
-            blocks.append(detail("dres-head", isOpen: detailOpen, live: true) {
-                ResolutionHeadBlock(controller: modeC, state: state)
-            })
-            blocks.append(detail("dres-body", isOpen: {
-                detailOpen() && state.resolutionOpenIDs.contains(id)
-            }) {
-                ResolutionSliderBlock(controller: modeC, state: state)
+            blocks.append(block("dres-primary-\(uuid)") {
+                PrimaryResolutionBlock(controller: modeC, state: state)
             })
             blocks.append(detail("dres-all", isOpen: {
-                detailOpen() && state.resolutionOpenIDs.contains(id)
-                    && state.allResolutionsOpenIDs.contains(id)
+                state.allResolutionsOpenIDs.contains(id)
             }) {
                 ResolutionFullListBlock(controller: modeC)
             })

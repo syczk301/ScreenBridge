@@ -612,9 +612,7 @@ struct ResolutionFullListBlock: View {
     private var display: DisplayInfo { controller.display }
 
     var body: some View {
-        if controller.sliderModes.count >= 2 {
-            ResolutionListView(controller: controller)
-        }
+        ResolutionListView(controller: controller)
     }
 }
 
@@ -918,4 +916,61 @@ private struct ResolutionGroup: Identifiable {
     }
     var hasMultipleRates: Bool { modes.count > 1 }
     var bestMode: DisplayMode { modes[0] }
+}
+
+/// Always-visible resolution control beneath hardware brightness.
+struct PrimaryResolutionBlock: View {
+    @ObservedObject var controller: DisplayModeController
+    @ObservedObject var state: PanelSectionState
+    @State private var dragging = false
+    private var busy: Bool {
+        controller.smoothBusy || controller.pendingResolutionID != nil || controller.pendingRefreshID != nil
+    }
+    var body: some View {
+        let modes = controller.sliderModes
+        let index = Int(controller.sliderIndex.rounded())
+        let selected = dragging && modes.indices.contains(index) ? modes[index] : controller.currentMode
+        VStack(alignment: .leading, spacing: 4) {
+            Button {
+                guard PanelOpenGuard.allowsActivation else { return }
+                let id = controller.display.displayID
+                if state.allResolutionsOpenIDs.contains(id) { state.allResolutionsOpenIDs.remove(id) }
+                else { state.allResolutionsOpenIDs.insert(id) }
+            } label: {
+                HStack {
+                    Text("Resolution")
+                    Spacer()
+                    Text(selected.map { "\($0.width) × \($0.height)" } ?? "—").monospacedDigit()
+                    Image(systemName: state.allResolutionsOpenIDs.contains(controller.display.displayID) ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 9, weight: .semibold))
+                }.font(.caption).foregroundStyle(.secondary).contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityHint("展开或收起完整分辨率列表")
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 13)).foregroundStyle(.secondary).frame(width: 18)
+                Slider(value: $controller.sliderIndex, in: 0...Double(max(1, modes.count - 1)), onEditingChanged: { editing in
+                    dragging = editing
+                    if !editing { controller.applySmooth(modes) }
+                })
+                .disabled(modes.count < 2 || busy)
+                .accessibilityLabel("分辨率")
+                .accessibilityValue(selected.map { "\($0.width) × \($0.height)" } ?? "不可用")
+                .onChange(of: controller.sliderIndex) { _, value in
+                    let snapped = value.rounded()
+                    if snapped != value { controller.sliderIndex = snapped }
+                }
+            }
+            if let error = controller.errorMessage {
+                Text(error).font(.caption).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 12).padding(.top, 2).padding(.bottom, 8)
+        .onAppear { controller.sliderIndex = controller.currentSmoothIndex(modes) }
+        .onChange(of: controller.display.currentDisplayMode?.id) { _, _ in
+            if !dragging { controller.sliderIndex = controller.currentSmoothIndex(modes) }
+        }
+        .onChange(of: modes.map(\.id)) { _, _ in
+            if !dragging { controller.sliderIndex = controller.currentSmoothIndex(modes) }
+        }
+    }
 }

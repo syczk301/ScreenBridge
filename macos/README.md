@@ -8,7 +8,7 @@
 
 从 [Releases](https://github.com/syczk301/ScreenBridge/releases/latest) 下载 DMG，将 **映桥.app** 拖入 **Applications / 应用程序**。
 
-- 当前版本：**1.3.4**。
+- 当前版本：**1.3.5**。
 - 预编译版本：Apple Silicon（arm64），macOS 14 及以上。
 - 使用 ad-hoc 签名，未经过 Apple Developer ID 签名和公证，系统可能拦截首次启动。确认来源后可按 macOS 提示在“隐私与安全性”中允许打开，或从源码构建。
 - 应用设置中可开启登录后自动启动。
@@ -93,3 +93,7 @@ MIT License，详见 [LICENSE](LICENSE)、[ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.m
 实测：JU24 在 3840×2160、160 Hz、1920×1080 HiDPI 下从 10-bit RGB 全范围切至 8-bit，再恢复 10-bit；系统读回通过，分辨率与刷新率未变；正式服务的 15 秒自动恢复亦已实测通过。其他格式和 HDR 的画面表现尚未逐项实测。
 
 接线设置仅自动预填经过实测的写入值。未验证的 HDMI/DP 接口留空；读回值不直接作为写入值。同值往返配置即时提示并禁止保存。JU27 当前 HDMI2 读回 18，经使用者确认物理接线；Windows 当前接法已由用户截图确认 HDMI2 写入 17、读回 18（2026-11-15）。17 可作为 macOS 的待验证候选值，不能把 Windows 验证视为 macOS 验证，也不能以读回 18 替代。
+
+## 主面板分辨率
+
+每台显示器在硬件亮度下方直接显示当前逻辑分辨率及调节滑块，无需展开详情。拖动预览、松开应用；点击分辨率标题行展开或收起完整列表。继续使用现有 HiDPI 和刷新率匹配逻辑。
