@@ -67,6 +67,10 @@ private struct InputRouteEditor: View {
             endpoint("切换目标", name: $targetName, value: $targetValue)
             Text("接口菜单只预填实测的写入值；未验证的接口留空，需手动验证后填写。当前输入读回值不是切换写入值。自定义条目不代表已验证。")
                 .font(.caption).foregroundStyle(.secondary)
+            if display.vendorNumber == 21063 && display.modelNumber == 10000 {
+                Text("JU27：DP1 写入 18，DP2 写入 16，输入命令单次发送。请关闭显示器的自动输入切换；读回编号不一定代表当前画面。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             HStack {
                 Button(reading ? "正在读取…" : "重新读取当前输入") {
                     Task { await readCurrent(prefill: false) }

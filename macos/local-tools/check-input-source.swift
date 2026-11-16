@@ -14,3 +14,8 @@ assert(DDCInputSource.value(from: "usb-c") == 0x1B)
 assert(DDCInputSource.value(from: "invalid") == nil)
 assert(DDCInputSource.values(inCapabilities: "(vcp(10 60(0F 11 12)))") == [0x0F, 0x11, 0x12])
 print("check-input-source: all assertions passed")
+
+assert(DDCInputSource.singleInputWrite(command: 0x60, vendor: 21063, model: 10000))
+assert(!DDCInputSource.singleInputWrite(command: 0x10, vendor: 21063, model: 10000))
+assert(!DDCInputSource.singleInputWrite(command: 0x60, vendor: 21063, model: 9237))
+assert(!DDCInputSource.singleInputWrite(command: 0x60, vendor: 1234, model: 10000))

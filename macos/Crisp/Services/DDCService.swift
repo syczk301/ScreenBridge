@@ -289,8 +289,8 @@ final class DDCService: ObservableObject, @unchecked Sendable {
 
     /// Two request cycles with a short gap, matching the public m1ddc transport.
     /// Never send a second cycle after a transport error; the caller owns retries.
-    private func sendARM64Request(_ service: IOAVServiceRef, buffer: inout [UInt8]) -> IOReturn {
-        for _ in 0..<2 {
+    private func sendARM64Request(_ service: IOAVServiceRef, buffer: inout [UInt8], cycles: Int = 2) -> IOReturn {
+        for _ in 0..<cycles {
             Thread.sleep(forTimeInterval: 0.01)
             let status = IOAVServiceWriteI2C(service, 0x37, 0x51, &buffer, UInt32(buffer.count))
             guard status == kIOReturnSuccess else { return status }
@@ -314,7 +314,7 @@ final class DDCService: ObservableObject, @unchecked Sendable {
         for b in payload { checksum ^= b }
 
         var buf: [UInt8] = payload + [checksum]
-        let ret = sendARM64Request(avService, buffer: &buf)
+        let ret = sendARM64Request(avService, buffer: &buf, cycles: singleInputWrite(displayID, command) ? 1 : 2)
         if ret != kIOReturnSuccess {
             Self.log.debug("write \(Self.hex(command), privacy: .public)=\(value, privacy: .public) display \(displayID, privacy: .public): I2C error \(String(format: "0x%08X", ret), privacy: .public)")
         }
@@ -501,6 +501,11 @@ final class DDCService: ObservableObject, @unchecked Sendable {
 
     /// Synchronous DDC write (VCP Set). Returns true on success.
     /// On ARM64 uses the IOAVService path; on x86_64 uses the IOFramebuffer I2C path.
+    private func singleInputWrite(_ displayID: CGDirectDisplayID, _ command: UInt8) -> Bool {
+        DDCInputSource.singleInputWrite(command: command, vendor: CGDisplayVendorNumber(displayID),
+                                       model: CGDisplayModelNumber(displayID))
+    }
+
     private func writeSynchronous(displayID: CGDirectDisplayID, command: UInt8, value: UInt16) -> Bool {
         let start = DispatchTime.now()
         defer {
@@ -513,6 +518,8 @@ final class DDCService: ObservableObject, @unchecked Sendable {
         if arm64Write(displayID: displayID, command: command, value: value) {
             return true
         }
+        // An uncertain IOAV result must not cause a second Set through another transport.
+        if singleInputWrite(displayID, command) { return false }
         if command == Self.brightnessVCP {
             return MSTBrightnessTransport.shared.writeBrightness(displayID: displayID, location: channelLocation(for: displayID), value: value)
         }
@@ -780,7 +787,8 @@ final class DDCService: ObservableObject, @unchecked Sendable {
         completion: (@Sendable (Bool) -> Void)? = nil
     ) {
         operationQueues.queue(for: displayID).async {
-            for attempt in 0..<3 {
+            let attempts = self.singleInputWrite(displayID, command) ? 1 : 3
+            for attempt in 0..<attempts {
                 if self.writeSynchronous(displayID: displayID, command: command, value: value) {
                     // Invalidate cached value so next read reflects the new setting.
                     self.cacheLock.lock()
@@ -790,9 +798,9 @@ final class DDCService: ObservableObject, @unchecked Sendable {
                     completion?(true)
                     return
                 }
-                if attempt < 2 { Thread.sleep(forTimeInterval: 0.05) }
+                if attempt + 1 < attempts { Thread.sleep(forTimeInterval: 0.05) }
             }
-            Self.log.error("write \(Self.hex(command), privacy: .public)=\(value, privacy: .public) display \(displayID, privacy: .public): failed all 3 attempts")
+            Self.log.error("write \(Self.hex(command), privacy: .public)=\(value, privacy: .public) display \(displayID, privacy: .public): failed after \(attempts, privacy: .public) attempt(s)")
             completion?(false)
         }
     }

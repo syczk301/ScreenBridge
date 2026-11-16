@@ -110,7 +110,7 @@ struct InputServiceChecks {
         assert(service.resolve("15", for: ju24) == 15)
         assert(service.resolve("0x12", for: ju24) == 18)
         assert(service.verifiedRouteValue("HDMI2", for: ju27) == nil)
-        assert(service.verifiedRouteValue("DP2", for: ju27) == nil)
+        assert(service.verifiedRouteValue("DP2", for: ju27) == 16)
         assert(service.verifiedRouteValue("DP1", for: ju27) == 18)
         assert(service.verifiedRouteValue("DP2", for: ju24) == 15)
         assert(service.verifiedRouteValue("HDMI2", for: ju24) == nil)

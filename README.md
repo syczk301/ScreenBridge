@@ -6,7 +6,7 @@
 
 | 平台 | 状态 | 源码与说明 |
 |---|---|---|
-| macOS | 已发布 1.3.2，Apple Silicon，macOS 14+ | [macos/](macos/) |
+| macOS | 已发布 1.3.3，Apple Silicon，macOS 14+ | [macos/](macos/) |
 | Windows | 待开发，尚无可用安装包 | [windows/](windows/) |
 
 ## 下载

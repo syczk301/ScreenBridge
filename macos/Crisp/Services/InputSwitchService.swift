@@ -124,13 +124,14 @@ final class InputSwitchService: ObservableObject {
         // JU24F160L has different Set and Get VCP 0x60 mappings.
         // Verified physical DP1: write 18, read 15; DP2: write 15, read 16.
         // Keep advertised/readback values unchanged; map only named commands.
-        // JU27F160L DP1 is independently verified; its DP2 remains unverified.
+        // JU27F160L: DP1=18, DP2=16 verified with auto input switching disabled.
         if display.vendorNumber == 21063 && display.modelNumber == 9237 {
             if standard == 15 { return 18 }
             if standard == 16 { return 15 }
         }
-        if display.vendorNumber == 21063 && display.modelNumber == 10000 && standard == 15 {
-            return 18
+        if display.vendorNumber == 21063 && display.modelNumber == 10000 {
+            if standard == 15 { return 18 }
+            if standard == 16 { return 16 }
         }
         return DDCInputSource.effectiveDP(standard, vendor: display.vendorNumber, model: display.modelNumber)
     }
@@ -142,6 +143,7 @@ final class InputSwitchService: ObservableObject {
         switch (display.vendorNumber, display.modelNumber, port) {
         case (21063, 9237, 15), (21063, 10000, 15): return 18
         case (21063, 9237, 16): return 15
+        case (21063, 10000, 16): return 16
         case (19491, 10083, 15): return 7
         case (19491, 10083, 16): return 8
         case (19491, 9571, 15): return 15

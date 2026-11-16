@@ -5,6 +5,11 @@ import Foundation
 /// Measured behaviour (bad reply rate, what macOS does while the monitor shows
 /// another source) is in docs/ddc-notes.md (input switching).
 enum DDCInputSource {
+    /// JU27 input selection is a single Set transaction; brightness and reads keep their transport policy.
+    static func singleInputWrite(command: UInt8, vendor: UInt32, model: UInt32) -> Bool {
+        command == 0x60 && vendor == 21063 && model == 10000
+    }
+
     static let vcp: UInt8 = 0x60
 
     /// SANC G73's MStar firmware advertises standard DP values but uses 7/8.
