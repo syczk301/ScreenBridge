@@ -543,10 +543,6 @@ struct SettingsView: View {
             isTrusted = AXIsProcessTrusted()
             if isTrusted { BrightnessKeyService.shared.start() }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .crispPanelDidClose)) { _ in
-            showBrightnessKeys = false
-            showHiDPIShortcut = false
-        }
     }
 }
 

@@ -49,10 +49,6 @@ struct SavePresetView: View {
                 .transition(.opacity)
             }
         }
-        // Collapse the form when the panel closes so it reopens fresh (fires while hidden).
-        .onReceive(NotificationCenter.default.publisher(for: .crispPanelDidClose)) { _ in
-            isShowingForm = false
-        }
     }
 }
 

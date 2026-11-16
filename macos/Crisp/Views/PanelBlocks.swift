@@ -24,22 +24,6 @@ final class PanelSectionState: ObservableObject {
     @Published var imageOpenIDs: Set<CGDirectDisplayID> = []
     @Published var inputOpenIDs: Set<CGDirectDisplayID> = []
 
-    /// Collapse every section so the panel reopens fresh; called once hidden.
-    func collapseAll() {
-        showTools = false
-        showVirtualDisplays = false
-        showArrangement = false
-        showSettings = false
-        expandedDisplayIDs.removeAll()
-        resolutionOpenIDs.removeAll()
-        allResolutionsOpenIDs.removeAll()
-        refreshOpenIDs.removeAll()
-        profileOpenIDs.removeAll()
-        outputColorOpenIDs.removeAll()
-        imageOpenIDs.removeAll()
-        inputOpenIDs.removeAll()
-    }
-
     /// Drop state for displays that disappeared (disconnect, reconfiguration).
     func retainDisplays(_ valid: Set<CGDirectDisplayID>) {
         expandedDisplayIDs.formIntersection(valid)
@@ -254,9 +238,11 @@ struct UpdateBlockView: View {
     @ObservedObject private var updateService = UpdateService.shared
 
     var body: some View {
-        if updateService.hasUpdate, let ver = updateService.latestVersion {
-            UpdateRow(version: ver) { updateService.installUpdate() }
-        }
+        Button { updateService.installUpdate() } label: {
+            Label("检查更新…", systemImage: "arrow.triangle.2.circlepath")
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12).padding(.vertical, 5)
+        }.buttonStyle(.plain)
     }
 }
 

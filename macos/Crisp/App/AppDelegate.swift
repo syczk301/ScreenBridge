@@ -778,10 +778,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 DispatchQueue.main.async { self.displayManager.pendingResolutionExpandUUID = nil }
             }
             .store(in: &canvasCancellables)
-        NotificationCenter.default.publisher(for: .crispPanelDidClose)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.sectionState.collapseAll() }
-            .store(in: &canvasCancellables)
     }
 
     /// True while the pointer sits over Crisp's own status item: presses there
@@ -982,8 +978,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
             p.animator().alphaValue = 0
         }, completionHandler: { [weak self] in
-            // Hidden now: tell the content to collapse its tool/nav sections so the
-            // next open is fresh. Skip if the panel was reopened during the fade.
+            // Keep navigation and forms open across dismissals. Notify transient
+            // controls (such as shortcut recording) only after the panel is hidden.
             // Animation completion runs on the main thread.
             MainActor.assumeIsolated {
                 guard let self, !self.isPanelShown else { return }

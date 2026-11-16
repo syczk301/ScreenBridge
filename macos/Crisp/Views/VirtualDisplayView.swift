@@ -130,12 +130,6 @@ struct VirtualDisplayView: View {
             PanelOpenGuard.isConfirmationActive = (newValue != nil)
         }
         .onDisappear { PanelOpenGuard.isConfirmationActive = false }
-        // Collapse inline create/edit forms when the panel closes, so it reopens fresh.
-        .onReceive(NotificationCenter.default.publisher(for: .crispPanelDidClose)) { _ in
-            showCreateForm = false
-            editingID = nil
-            createError = nil
-        }
     }
 
     /// Re-creates the live CGVirtualDisplay for a config that is off.

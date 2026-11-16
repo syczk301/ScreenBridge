@@ -108,10 +108,6 @@ struct PresetRow: View {
                     .transition(.opacity)
             }
         }
-        // Collapse the inline edit form when the panel closes, so it reopens fresh.
-        .onReceive(NotificationCenter.default.publisher(for: .crispPanelDidClose)) { _ in
-            isEditing = false
-        }
         .onChange(of: isApplying) { _, applying in
             if applying {
                 Task {

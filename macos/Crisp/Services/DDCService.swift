@@ -810,11 +810,12 @@ final class DDCService: ObservableObject, @unchecked Sendable {
     func readAsync(
         displayID: CGDirectDisplayID,
         command: UInt8,
+        forceRefresh: Bool = false,
         completion: @escaping @Sendable ((current: UInt16, max: UInt16)?) -> Void
     ) {
         // Fast path: return cached value if still fresh
         cacheLock.lock()
-        if let entry = vcpCache[displayID]?[command], !entry.isExpired {
+        if !forceRefresh, let entry = vcpCache[displayID]?[command], !entry.isExpired {
             cacheLock.unlock()
             completion((current: entry.current, max: entry.max))
             return

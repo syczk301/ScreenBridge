@@ -1,0 +1,9 @@
+{
+  "app": "ScreenBridge",
+  "account": "syczk301.ScreenBridge",
+  "publicKey": "lemeQGE1UJRcdy/WiKkN8Js3BSHhlDb5SHYCnNnfKWE=",
+  "feedURL": "https://github.com/syczk301/ScreenBridge/releases/download/sparkle/appcast.xml",
+  "downloadURLPrefix": "https://github.com/syczk301/ScreenBridge/releases/download/sparkle/",
+  "version": "1.4.0",
+  "bundle": "build/\u6620\u6865.app"
+}

@@ -48,13 +48,16 @@ final class PanelRootView: NSView {
 
 /// The scrollable region (everything above the footer). Manual offset scroll:
 /// no elastic, no indicators, matching how the panel's ScrollView behaved.
-/// ponytail: raw wheel deltas only; add momentum if it ever feels off.
+/// Precise devices report points; conventional wheels report lines (NSEvent contract).
 final class PanelViewport: FlippedView {
     var onScroll: ((CGFloat) -> Void)?
     var isScrollable: () -> Bool = { false }
     override func scrollWheel(with event: NSEvent) {
         guard isScrollable() else { return }
-        onScroll?(event.scrollingDeltaY)
+        // Convert line-based wheel events to points. Keep precise scrolling and
+        // momentum untouched; NSEvent already applies the user's scroll direction.
+        let pointsPerUnit: CGFloat = event.hasPreciseScrollingDeltas ? 1 : 28
+        onScroll?(event.scrollingDeltaY * pointsPerUnit)
     }
 }
 

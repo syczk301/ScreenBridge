@@ -48,6 +48,9 @@ struct ImageAdjustmentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
+            HardwareWhiteBalanceView(display: display, isExpanded: isExpanded)
+            Divider().padding(.vertical, 6)
+            Text("软件图像调整").font(.caption.bold()).padding(.horizontal, 12)
             // MARK: Global adjustments
             adjustRow(icon: "circle.righthalf.filled", label: "Contrast", value: $contrast)
             adjustRow(icon: "sparkle", label: "Gamma", value: $gammaVal)
