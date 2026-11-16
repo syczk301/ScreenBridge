@@ -283,9 +283,6 @@ final class DisplayModeController: ObservableObject {
     /// One representative per logical size, ascending: left = Larger Text, right = More Space.
     private var smoothModes: [DisplayMode] {
         let (nativeW, nativeH) = display.nativeResolution
-        // Floor at 50% of native (the 2x Retina point), matching the injected ladder and
-        // BetterDisplay, so small accessibility HiDPI modes don't drag the left stop down.
-        let minWidth = nativeW / 2
         // Prefer the crisp non-HiDPI native over its softer same-size HiDPI twin for the
         // "More Space" end.
         let hasNativeDefault = display.availableModes.contains { !$0.isHiDPI && $0.width == nativeW && $0.height == nativeH }
@@ -300,7 +297,8 @@ final class DisplayModeController: ObservableObject {
                 guard abs(Double($0.width) / Double($0.height) - nativeAR) / nativeAR < 0.02
                 else { return false }
                 if hasNativeDefault, $0.isHiDPI, $0.width == nativeW, $0.height == nativeH { return false }
-                return ($0.isHiDPI && $0.width >= minWidth) || ($0.width == nativeW && $0.height == nativeH)
+                return DisplayModeGeometry.isResolutionSliderEligible(width: $0.width, height: $0.height,
+                    isHiDPI: $0.isHiDPI, nativeWidth: nativeW, nativeHeight: nativeH)
             }
             .sorted {
                 if $0.isHiDPI != $1.isHiDPI { return $0.isHiDPI }
@@ -923,12 +921,14 @@ struct PrimaryResolutionBlock: View {
     @ObservedObject var controller: DisplayModeController
     @ObservedObject var state: PanelSectionState
     @State private var dragging = false
+    @State private var draftIndex: Double = 0
     private var busy: Bool {
         controller.smoothBusy || controller.pendingResolutionID != nil || controller.pendingRefreshID != nil
     }
     var body: some View {
         let modes = controller.sliderModes
-        let index = Int(controller.sliderIndex.rounded())
+        let currentIndex = controller.currentSmoothIndex(modes)
+        let index = Int(draftIndex.rounded())
         let selected = dragging && modes.indices.contains(index) ? modes[index] : controller.currentMode
         VStack(alignment: .leading, spacing: 4) {
             Button {
@@ -940,7 +940,7 @@ struct PrimaryResolutionBlock: View {
                 HStack {
                     Text("Resolution")
                     Spacer()
-                    Text(selected.map { "\($0.width) × \($0.height)" } ?? "—").monospacedDigit()
+                    Text(verbatim: selected.map { "\($0.width) × \($0.height)" } ?? "—").monospacedDigit()
                     Image(systemName: state.allResolutionsOpenIDs.contains(controller.display.displayID) ? "chevron.up" : "chevron.down")
                         .font(.system(size: 9, weight: .semibold))
                 }.font(.caption).foregroundStyle(.secondary).contentShape(Rectangle())
@@ -948,29 +948,31 @@ struct PrimaryResolutionBlock: View {
             HStack(spacing: 8) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
                     .font(.system(size: 13)).foregroundStyle(.secondary).frame(width: 18)
-                Slider(value: $controller.sliderIndex, in: 0...Double(max(1, modes.count - 1)), onEditingChanged: { editing in
-                    dragging = editing
-                    if !editing { controller.applySmooth(modes) }
+                Slider(value: Binding(
+                    get: { dragging ? draftIndex : currentIndex },
+                    set: { draftIndex = $0.rounded(); dragging = true }
+                ), in: 0...Double(max(1, modes.count - 1)), onEditingChanged: { editing in
+                    if editing {
+                        if !dragging { draftIndex = currentIndex }
+                        dragging = true
+                    } else {
+                        controller.sliderIndex = draftIndex
+                        controller.applySmooth(modes)
+                        dragging = false
+                    }
                 })
                 .disabled(modes.count < 2 || busy)
                 .accessibilityLabel("分辨率")
                 .accessibilityValue(selected.map { "\($0.width) × \($0.height)" } ?? "不可用")
-                .onChange(of: controller.sliderIndex) { _, value in
-                    let snapped = value.rounded()
-                    if snapped != value { controller.sliderIndex = snapped }
-                }
             }
             if let error = controller.errorMessage {
                 Text(error).font(.caption).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, 12).padding(.top, 2).padding(.bottom, 8)
-        .onAppear { controller.sliderIndex = controller.currentSmoothIndex(modes) }
-        .onChange(of: controller.display.currentDisplayMode?.id) { _, _ in
-            if !dragging { controller.sliderIndex = controller.currentSmoothIndex(modes) }
-        }
         .onChange(of: modes.map(\.id)) { _, _ in
-            if !dragging { controller.sliderIndex = controller.currentSmoothIndex(modes) }
+            // A reconnect or mode-list refresh invalidates a drag's index snapshot.
+            dragging = false
         }
     }
 }

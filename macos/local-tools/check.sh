@@ -36,3 +36,8 @@ swiftc -swift-version 6 -module-cache-path build/module-cache -parse-as-library 
   Crisp/Models/OutputColorMode.swift local-tools/check-output-color.swift \
   -o build/checks/output-color
 build/checks/output-color
+
+swiftc -swift-version 6 -module-cache-path build/module-cache -parse-as-library \
+  Crisp/Models/DisplayModeGeometry.swift local-tools/check-resolution-slider.swift \
+  -o build/checks/resolution-slider
+build/checks/resolution-slider

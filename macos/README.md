@@ -8,7 +8,7 @@
 
 从 [Releases](https://github.com/syczk301/ScreenBridge/releases/latest) 下载 DMG，将 **映桥.app** 拖入 **Applications / 应用程序**。
 
-- 当前版本：**1.3.5**。
+- 当前版本：**1.3.6**。
 - 预编译版本：Apple Silicon（arm64），macOS 14 及以上。
 - 使用 ad-hoc 签名，未经过 Apple Developer ID 签名和公证，系统可能拦截首次启动。确认来源后可按 macOS 提示在“隐私与安全性”中允许打开，或从源码构建。
 - 应用设置中可开启登录后自动启动。

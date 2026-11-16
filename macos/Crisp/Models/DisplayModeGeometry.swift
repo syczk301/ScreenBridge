@@ -19,6 +19,14 @@ struct DisplayModeGeometry: Equatable {
         min(width, height) >= 720 && max(width, height) >= 1280
     }
 
+    /// Include the same useful low-resolution HiDPI sizes as the full picker.
+    /// A 4K display must not treat 1920x1080 as its lowest slider stop.
+    static func isResolutionSliderEligible(width: Int, height: Int, isHiDPI: Bool,
+                                           nativeWidth: Int, nativeHeight: Int) -> Bool {
+        isResolutionMenuEligible(width: width, height: height)
+            && (isHiDPI || (width == nativeWidth && height == nativeHeight))
+    }
+
     static func hasSameOrientation(width: Int, height: Int,
                                    as referenceWidth: Int, _ referenceHeight: Int) -> Bool {
         if width == height || referenceWidth == referenceHeight { return true }
