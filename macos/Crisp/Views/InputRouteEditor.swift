@@ -57,7 +57,7 @@ private struct InputRouteEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(display.name).font(.title2.bold())
-            Text("按显示器一端的插口设置：本机接口用于返回这台 Mac，目标接口用于切换到另一台设备。")
+            Text("按显示器一端的插口设置：本机接口记录这台 Mac 的接线，目标接口用于切换到另一台设备。")
                 .font(.callout)
             endpoint("本机接口", name: Binding(get: { homeName }, set: {
                 homeEdited = true; confirmedHome = false; homeName = $0
@@ -87,7 +87,7 @@ private struct InputRouteEditor: View {
                 Toggle("我确认这台显示器当前显示的是此 Mac 的画面", isOn: $confirmedHome)
                     .font(.callout)
             }
-            Text("保存只修改配置，不切屏。重新接线后请更新此设置。返回操作需要显示器仍接受本机接口上的 DDC 命令。")
+            Text("保存只修改配置，不切屏。重新接线后请更新此设置。切回时请从另一台电脑操作，或使用显示器实体菜单。")
                 .font(.caption).foregroundStyle(.secondary)
             if duplicateValues {
                 Text("本机和目标的写入值相同，会发送同一条命令。请核实未验证接口的写入值，不要直接填入当前读回编号。")

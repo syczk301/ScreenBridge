@@ -33,10 +33,6 @@ struct InputBodyBlock: View {
                                  isSelected: false, isPending: pending == route.target.value) {
                         choose(route.target.value)
                     }.disabled(service.switching.contains(display.displayUUID))
-                    CheckmarkRow(label: "返回本机 · \(route.home.name)",
-                                 isSelected: false, isPending: pending == route.home.value) {
-                        choose(route.home.value)
-                    }.disabled(service.switching.contains(display.displayUUID))
                 } else {
                     Text("请按实际接线设置本机接口和切换目标。").inputCaption()
                 }

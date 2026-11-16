@@ -30,7 +30,7 @@ final class InputSwitchService: ObservableObject {
     }
 
     /// Snapshot targets and launch every write before awaiting any result.
-    func switchConfigured(_ displays: [DisplayInfo], to destination: DisplayInputRoute.Destination) async {
+    func switchConfigured(_ displays: [DisplayInfo]) async {
         let targets = physicalTargets(in: displays)
         guard !batchSwitching, !targets.isEmpty,
               targets.allSatisfy({ !switching.contains($0.displayUUID) }) else { return }
@@ -39,7 +39,7 @@ final class InputSwitchService: ObservableObject {
         defer { batchSwitching = false }
         let tasks = targets.map { display in
             let name = display.name
-            let value = routes[display.displayUUID]?.input(for: destination).value
+            let value = routes[display.displayUUID]?.target.value
             return Task { @MainActor in
                 guard let value else { return "\(name)：未设置接线，已跳过" }
                 let result = await self.switchInput(display, to: value)
@@ -78,8 +78,8 @@ final class InputSwitchService: ObservableObject {
         routes = updated
     }
 
-    func switchRoute(_ display: DisplayInfo, to destination: DisplayInputRoute.Destination) async -> Result<Bool, SwitchError> {
-        guard let value = routes[display.displayUUID]?.input(for: destination).value else {
+    func switchRoute(_ display: DisplayInfo) async -> Result<Bool, SwitchError> {
+        guard let value = routes[display.displayUUID]?.target.value else {
             return .failure(.notConfigured)
         }
         return await switchInput(display, to: value)

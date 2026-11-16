@@ -62,10 +62,6 @@ struct DisplayInputRoute: Codable, Equatable {
     let home: CustomInputSource
     let target: CustomInputSource
 
-    enum Destination { case home, target }
-    func input(for destination: Destination) -> CustomInputSource {
-        destination == .home ? home : target
-    }
     var isValid: Bool {
         home.value > 0 && target.value > 0 && home.value != target.value
             && !home.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

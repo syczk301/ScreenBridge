@@ -77,33 +77,33 @@ struct InputServiceChecks {
             } catch { }
         }
         assert(service.routes[ju24.displayUUID]?.home.value == 15)
-        await service.switchConfigured([ju24, ju27, ju24, g73, DisplayInfo(id: 1, builtin: true), DisplayInfo(id: 999)], to: .target)
+        await service.switchConfigured([ju24, ju27, ju24, g73, DisplayInfo(id: 1, builtin: true), DisplayInfo(id: 999)])
         assert(ddc.writes.count == 2)
         assert(ddc.writes.contains { $0.0 == 240 && $0.1 == 18 })
         assert(ddc.writes.contains { $0.0 == 270 && $0.1 == 27 })
         assert(service.batchMessage?.contains("已跳过") == true && !service.batchSwitching)
         ddc.writes = []
-        await service.switchConfigured([ju24, ju27], to: .home)
+        await service.switchConfigured([ju24, ju27])
         assert(ddc.writes.count == 2)
-        assert(ddc.writes.contains { $0.0 == 240 && $0.1 == 15 })
-        assert(ddc.writes.contains { $0.0 == 270 && $0.1 == 17 })
+        assert(ddc.writes.contains { $0.0 == 240 && $0.1 == 18 })
+        assert(ddc.writes.contains { $0.0 == 270 && $0.1 == 27 })
         ddc.writes = []
         ddc.accept = false
-        await service.switchConfigured([ju24, ju27], to: .target)
+        await service.switchConfigured([ju24, ju27])
         assert(ddc.writes.count == 2 && service.batchMessage?.contains("发送失败") == true)
         ddc.accept = true
         ddc.writes = []
         service.resetRoute(for: ju24.displayUUID)
-        guard case .failure(.notConfigured) = await service.switchRoute(ju24, to: .home) else {
+        guard case .failure(.notConfigured) = await service.switchRoute(ju24) else {
             fatalError("Missing route must not guess DP2")
         }
-        await service.switchConfigured([ju24], to: .target)
+        await service.switchConfigured([ju24])
         assert(ddc.writes.isEmpty)
-        _ = await service.switchRoute(ju27, to: .home)
-        _ = await service.switchRoute(ju27, to: .home)
-        assert(ddc.writes.count == 2 && ddc.writes.allSatisfy { $0.1 == 17 })
+        _ = await service.switchRoute(ju27)
+        _ = await service.switchRoute(ju27)
+        assert(ddc.writes.count == 2 && ddc.writes.allSatisfy { $0.1 == 27 })
         ddc.writes = []
-        await service.switchConfigured([], to: .home)
+        await service.switchConfigured([])
         assert(ddc.writes.isEmpty && ddc.reads == 0 && !service.batchSwitching)
         assert(service.resolve("dp1", for: ju24) == 18)
         assert(service.resolve("DisplayPort 2", for: ju24) == 15)
